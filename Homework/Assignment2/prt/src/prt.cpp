@@ -1,3 +1,4 @@
+#include <cmath>
 #include <nori/integrator.h>
 #include <nori/scene.h>
 #include <nori/ray.h>
@@ -129,6 +130,13 @@ namespace ProjEnv
                     int index = (y * width + x) * channel;
                     Eigen::Array3f Le(images[i][index + 0], images[i][index + 1],
                                       images[i][index + 2]);
+                    float dw = CalcArea(x, y, width, height); // delta_area / r^3, r = 1
+                    for (int j = 0; j < SHNum; ++j) {
+                        int l = std::floor(std::sqrt(j));
+                        int m = j - l * (l + 1);
+                        double sh_val = sh::EvalSH(l, m, Eigen::Vector3d(dir.x(), dir.y(), dir.z()).normalized());
+                        SHCoeffiecents[j] += Le * sh_val * dw;
+                    }
                 }
             }
         }
@@ -210,13 +218,23 @@ public:
                 {
                     // TODO: here you need to calculate unshadowed transport term of a given direction
                     // TODO: 此处你需要计算给定方向下的unshadowed传输项球谐函数值
-                    return 0;
+                    double H = n.normalized().dot(wi.normalized());
+                    return std::max(H, 0.0);
                 }
                 else
                 {
                     // TODO: here you need to calculate shadowed transport term of a given direction
                     // TODO: 此处你需要计算给定方向下的shadowed传输项球谐函数值
-                    return 0;
+                    double H = n.normalized().dot(wi.normalized());
+                    if (H <= 0.0) {
+                        return 0.0;
+                    }
+                    Vector3f offsetOrigin = v + n.normalized() * 1e-4f;
+                    Ray3f shadowRay(offsetOrigin, wi.normalized());
+                    if (scene->rayIntersect(shadowRay)) {
+                        return 0.0; 
+                    }
+                    return H;
                 }
             };
             auto shCoeff = sh::ProjectFunction(SHOrder, shFunc, m_SampleCount);
