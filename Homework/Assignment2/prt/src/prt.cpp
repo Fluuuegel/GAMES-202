@@ -240,7 +240,7 @@ public:
             auto shCoeff = sh::ProjectFunction(SHOrder, shFunc, m_SampleCount);
             for (int j = 0; j < shCoeff->size(); j++)
             {
-                m_TransportSHCoeffs.col(i).coeffRef(j) = (*shCoeff)[j];
+                m_TransportSHCoeffs.col(i).coeffRef(j) = (*shCoeff)[j] / M_PI;
             }
         }
         if (m_Type == Type::Interreflection)
@@ -293,11 +293,11 @@ public:
         // TODO: you need to delete the following four line codes after finishing your calculation to SH,
         //       we use it to visualize the normals of model for debug.
         // TODO: 在完成了球谐系数计算后，你需要删除下列四行，这四行代码的作用是用来可视化模型法线
-        if (c.isZero()) {
-            auto n_ = its.shFrame.n.cwiseAbs();
-            return Color3f(n_.x(), n_.y(), n_.z());
-        }
-        return c;
+        // if (c.isZero()) {
+        //     auto n_ = its.shFrame.n.cwiseAbs();
+        //     return Color3f(n_.x(), n_.y(), n_.z());
+        // }
+        // return c;
     }
 
     std::string toString() const
